@@ -1,0 +1,70 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: bookie-config
+  namespace: admq
+data:
+  BOOKIE_MEM: " -Xms64m -Xmx256m -XX:MaxDirectMemorySize=256m"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: bookkeeper
+  namespace: admq
+spec:
+  ports:
+    - port: 3181
+      name: server
+  clusterIP: None
+  selector:
+    app: bookkeeper
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: bookie
+  namespace: admq
+spec:
+  selector:
+    matchLabels:
+      app: bookkeeper
+  template:
+    metadata:
+      labels:
+        app: bookkeeper
+    spec:
+      containers:
+        - name: bookie
+          image: "mz1999/admq:2.1.0"
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - >
+              /admq/bin/admq storage
+          ports:
+            - containerPort: 3181
+              hostPort: 3181
+              name: client
+          envFrom:
+            - configMapRef:
+                name: bookie-config
+          env:
+            - name: advertisedAddress
+              valueFrom:
+                fieldRef:
+                  fieldPath: status.hostIP
+          volumeMounts:
+            - name: journal-disk
+              mountPath: /admq/data/bookkeeper/journal
+            - name: ledgers-disk
+              mountPath: /admq/data/bookkeeper/data
+      volumes:
+        # Mount local disks
+        - name: journal-disk
+          hostPath:
+            path: /mnt/admq/journal
+            type: DirectoryOrCreate
+        - name: ledgers-disk
+          hostPath:
+            path: /mnt/admq/ledgers
+            type: DirectoryOrCreate

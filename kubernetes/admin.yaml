@@ -1,0 +1,45 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: admq-admin
+  namespace: admq
+  labels:
+    app: admq-admin
+spec:
+  ports:
+    - port: 7750
+      name: license
+  selector:
+    app: admq-admin
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: admq-admin
+  namespace: admq
+spec:
+  selector:
+    matchLabels:
+      app: admq-admin
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: admq-admin
+    spec:
+      containers:
+        - name: admq-admin
+          image: "mz1999/admq:2.1.0"
+          imagePullPolicy: IfNotPresent
+          command: ["sh", "-c"]
+          args:
+            - >
+              /admq/manager/bin/admq-manager start
+          ports:
+            - containerPort: 7750
+              name: license
+          env:
+            - name: webServiceUrl
+              value: "http://broker:8080/"
+            - name: brokerServiceUrl
+              value: "pulsar://broker:6650/"

@@ -1,0 +1,14 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: shell-demo
+  namespace: admq
+spec:
+  containers:
+    - name: admq
+      image: mz1999/admq:2.1.0
+      imagePullPolicy: IfNotPresent
+      command: ["/bin/bash", "-c"]
+      args:
+        - >
+          sleep 86400
