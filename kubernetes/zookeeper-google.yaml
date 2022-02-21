@@ -33,13 +33,13 @@ apiVersion: policy/v1beta1
 kind: PodDisruptionBudget
 metadata:
   name: zk-pdb
+  namespace: admq
 spec:
   selector:
     matchLabels:
       app: zk
   maxUnavailable: 1
 ---
-## Define a StatefulSet for ZK servers
 apiVersion: apps/v1
 kind: StatefulSet
 metadata:
@@ -59,8 +59,6 @@ spec:
       labels:
         app: zk
     spec:
-      # Make sure multiple pods of ZK don't get scheduled on the
-      # same node, unless there are no other available nodes
       affinity:
         podAntiAffinity:
           requiredDuringSchedulingIgnoredDuringExecution:
@@ -72,17 +70,13 @@ spec:
                       - zk
               topologyKey: "kubernetes.io/hostname"
       containers:
-        - name: zookeeper
-          image: "mz1999/admq:2.1.0"
+        - name: kubernetes-zookeeper
           imagePullPolicy: IfNotPresent
+          image: "mz1999/kubernetes-zookeeper:1.0-3.4.10"
           resources:
             requests:
-              memory: "256M"
+              memory: "1Gi"
               cpu: "0.5"
-          command: ["sh", "-c"]
-          args:
-            - >
-              /admq/bin/admq zookeeper
           ports:
             - containerPort: 2181
               name: client
@@ -90,28 +84,49 @@ spec:
               name: server
             - containerPort: 3888
               name: leader-election
-          env:
-            - name: ZOOKEEPER_SERVERS
-              value: zk-0,zk-1,zk-2
+          command:
+            - sh
+            - -c
+            - "start-zookeeper \
+              --servers=3 \
+              --data_dir=/var/lib/zookeeper/data \
+              --data_log_dir=/var/lib/zookeeper/data/log \
+              --conf_dir=/opt/zookeeper/conf \
+              --client_port=2181 \
+              --election_port=3888 \
+              --server_port=2888 \
+              --tick_time=2000 \
+              --init_limit=10 \
+              --sync_limit=5 \
+              --heap=512M \
+              --max_client_cnxns=60 \
+              --snap_retain_count=3 \
+              --purge_interval=12 \
+              --max_session_timeout=40000 \
+              --min_session_timeout=4000 \
+              --log_level=INFO"
           readinessProbe:
             exec:
               command:
-                - bash
+                - sh
                 - -c
-                - "/admq/bin/zookeeper-ruok.sh"
+                - "zookeeper-ready 2181"
             initialDelaySeconds: 10
             timeoutSeconds: 5
           livenessProbe:
             exec:
               command:
-                - bash
+                - sh
                 - -c
-                - "/admq/bin/zookeeper-ruok.sh"
+                - "zookeeper-ready 2181"
             initialDelaySeconds: 10
             timeoutSeconds: 5
           volumeMounts:
             - name: datadir
-              mountPath: /admq/data
-      volumes:
-        - name: datadir
-          emptyDir: {}
+              mountPath: /var/lib/zookeeper
+      securityContext:
+        runAsUser: 1000
+        fsGroup: 1000
+    volumes:
+      - name: datadir
+        emptyDir: {}
