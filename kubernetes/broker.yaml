@@ -51,10 +51,11 @@ spec:
       containers:
         - name: broker
           image: "mz1999/admq:2.1.0"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command: ["sh", "-c"]
           args:
             - >
+              sed -i "s/advertisedAddress=/advertisedAddress=${advertisedAddress}/g" /admq/config/broker.conf &&
               /admq/bin/admq broker
           ports:
             - containerPort: 8080

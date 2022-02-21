@@ -11,7 +11,7 @@ spec:
       containers:
         - name: admq-cluster-metadata-init-container
           image: "mz1999/admq:2.1.0"
-          imagePullPolicy: IfNotPresent
+          imagePullPolicy: Always
           command: ["sh", "-c"]
           args:
             - >
