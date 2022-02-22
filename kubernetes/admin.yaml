@@ -30,7 +30,7 @@ spec:
       containers:
         - name: admq-admin
           image: "mz1999/admq:2.1.0"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
             - >

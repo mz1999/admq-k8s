@@ -11,14 +11,14 @@ spec:
       containers:
         - name: admq-cluster-metadata-init-container
           image: "mz1999/admq:2.1.0"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
             - >
               /admq/bin/admqctl initialize-cluster-metadata \
                 --cluster apusic-admq \
-                --zookeeper zookeeper:2181 \
-                --configuration-store zookeeper:2181 \
+                --zookeeper zookeeper \
+                --configuration-store zookeeper \
                 --web-service-url http://broker:8080/ \
                 --broker-service-url pulsar://broker:6650/ \
                 --manager-url http://admq-admin:7750 || true;

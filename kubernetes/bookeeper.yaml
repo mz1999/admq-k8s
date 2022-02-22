@@ -36,11 +36,12 @@ spec:
       containers:
         - name: bookie
           image: "mz1999/admq:2.1.0"
-          imagePullPolicy: Always
+          imagePullPolicy: IfNotPresent
           command: ["sh", "-c"]
           args:
             - >
               sed -i "s/advertisedAddress=/advertisedAddress=${advertisedAddress}/g" /admq/config/storage.conf &&
+              rm -f /admq/libs/rocksdbjni-6.21.0-linux64.jar &&
               /admq/bin/admq storage
           ports:
             - containerPort: 3181
