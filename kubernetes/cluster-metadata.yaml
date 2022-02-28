@@ -16,7 +16,7 @@ spec:
           args:
             - >
               /admq/bin/admqctl initialize-cluster-metadata \
-                --cluster apusic-admq \
+                --cluster apusic-mq \
                 --zookeeper zookeeper \
                 --configuration-store zookeeper \
                 --web-service-url http://broker:8080/ \

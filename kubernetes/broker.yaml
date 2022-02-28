@@ -21,21 +21,22 @@ metadata:
   name: broker-nodeport
   namespace: admq
 spec:
+  externalTrafficPolicy: Local
   type: NodePort
   ports:
     - name: http
-      port: 8080
-      targetPort: 8080
+      port: 30080
+      targetPort: 30080
       nodePort: 30080
     - name: pulsar
-      port: 6650
-      targetPort: 6650
+      port: 30050
+      targetPort: 30050
       nodePort: 30050
   selector:
     app: broker
 ---
 apiVersion: apps/v1
-kind: Deployment
+kind: DaemonSet
 metadata:
   name: broker
   namespace: admq
@@ -43,7 +44,6 @@ spec:
   selector:
     matchLabels:
       app: broker
-  replicas: 3
   template:
     metadata:
       labels:
@@ -57,14 +57,16 @@ spec:
           args:
             - >
               sed -i "s/advertisedAddress=/advertisedAddress=${advertisedAddress}/g" /admq/config/broker.conf &&
+              sed -i "s/brokerServicePort=6650/brokerServicePort=30050/g" /admq/config/broker.conf &&
+              sed -i "s/webServicePort=8080/webServicePort=30080/g" /admq/config/broker.conf &&
               /admq/bin/admq broker
           ports:
-            - containerPort: 8080
+            - containerPort: 30080
               name: http
-            - containerPort: 6650
+            - containerPort: 30050
               name: pulsar
           env:
             - name: advertisedAddress
               valueFrom:
                 fieldRef:
-                  fieldPath: status.podIP
+                  fieldPath: metadata.name
